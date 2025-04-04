@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "841138182238",
+    "firebase_url": "https://smithmicrotest-67281-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "smithmicrotest-67281",
+    "storage_bucket": "smithmicrotest-67281.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:841138182238:android:784c03233348bb71dd3ccf",
+        "android_client_info": {
+          "package_name": "com.ferreirarobert.smithmicrotest"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6h4MLA-y26YQWuk7fbVh_lN7hUE4lXfk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
