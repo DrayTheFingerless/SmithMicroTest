@@ -50,6 +50,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.ferreirarobert.smithmicrotest.models.Note
+import com.ferreirarobert.smithmicrotest.viewmodels.MainViewModel
 import com.ferreirarobert.smithmicrotest.viewmodels.NotesViewModel
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
@@ -61,6 +62,7 @@ import org.osmdroid.views.overlay.Marker
 fun NotesScreen(
     //modifier,
     navController: NavController,
+    mainVM: MainViewModel,
     notesVM: NotesViewModel = hiltViewModel()
 ) {
 
@@ -72,6 +74,16 @@ fun NotesScreen(
 
     var showDialog by remember { mutableStateOf(false) }
     var newNoteText by remember { mutableStateOf("") }
+    var showError = notesVM.errorMessage.collectAsState()
+
+    //any time theres an error reading/writing data,
+    // any errors thrown will throw a callback in the MainVM function which will show
+    //a snack bar with the error message
+    showError.value?.let {
+        val errorMessage = it
+        mainVM.showErrorMessage(errorMessage)
+        notesVM.resetError()
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
             Row(
@@ -241,5 +253,5 @@ fun MapViewComposable(modifier: Modifier = Modifier, notes: List<Note> = emptyLi
 @Composable
 fun NotesScreenPreview() {
     val mockNavCon = rememberNavController()
-    NotesScreen(mockNavCon)
+    NotesScreen(mockNavCon, MainViewModel())
 }

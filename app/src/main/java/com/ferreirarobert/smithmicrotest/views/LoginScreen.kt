@@ -34,6 +34,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.ferreirarobert.smithmicrotest.viewmodels.MainViewModel
 import com.ferreirarobert.smithmicrotest.viewmodels.UserViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -42,13 +43,21 @@ import kotlinx.coroutines.flow.first
 fun LoginScreen(
     //modifier,
     navController: NavController,
-     userVM: UserViewModel = hiltViewModel()
+    mainVM: MainViewModel,
+    userVM: UserViewModel = hiltViewModel()
 ){
 
     var usernameState by remember { mutableStateOf("robert") }
     var passwordState by remember { mutableStateOf("1234") }
     var loggedUser = userVM.user.collectAsState()
     var showRegister = userVM.showRegister.collectAsState()
+    var showError = userVM.errorMessage.collectAsState()
+
+    showError.value?.let {
+        val errorMessage = it
+        mainVM.showErrorMessage(errorMessage)
+        userVM.resetError()
+    }
 
     //checks if user is logged in, or exists, if so, shows the notes, otherwise shows loginscreen
     if(loggedUser.value != null) {
@@ -132,6 +141,7 @@ fun RegisterScreen(
 ) {
     var usernameState by remember { mutableStateOf("") }
     var passwordState by remember { mutableStateOf("") }
+
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -188,5 +198,5 @@ fun RegisterScreen(
 @Composable
 fun LoginScreenPreview() {
     val mockNavCon = rememberNavController()
-    LoginScreen(mockNavCon)
+    LoginScreen(mockNavCon, MainViewModel())
 }

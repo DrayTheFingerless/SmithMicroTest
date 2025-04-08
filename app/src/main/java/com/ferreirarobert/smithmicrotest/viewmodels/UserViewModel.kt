@@ -43,7 +43,6 @@ class UserViewModel @Inject constructor(
     private var _loginSuccess = MutableStateFlow<Boolean?>(null)
     val loginSuccess: StateFlow<Boolean?> = _loginSuccess
 
-
     fun setShowRegister(value: Boolean) {
         _showRegister.value = value
     }
@@ -100,7 +99,11 @@ class UserViewModel @Inject constructor(
     }
 
     fun resetLoginSuccess() {
-        _user.value = null // Or false, depending on your initial state
+        _user.value = null
+    }
+
+    fun resetError() {
+        _errorMessage.value = null
     }
 
     companion object {

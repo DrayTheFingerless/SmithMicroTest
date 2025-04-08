@@ -133,6 +133,10 @@ class NotesViewModel @Inject constructor(
         return centerLongitude + randomOffset
     }
 
+    fun resetError() {
+        _errorMessage.value = null
+    }
+
     companion object {
         private const val TAG = "NOTES"
     }
