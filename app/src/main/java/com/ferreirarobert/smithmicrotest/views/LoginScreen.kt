@@ -17,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,9 +50,21 @@ fun LoginScreen(
 
     var usernameState by remember { mutableStateOf("robert") }
     var passwordState by remember { mutableStateOf("1234") }
-    var loggedUser = userVM.user.collectAsState()
     var showRegister = userVM.showRegister.collectAsState()
+
     var showError = userVM.errorMessage.collectAsState()
+
+    var isError by remember { mutableStateOf(false) }
+    val loginSuccess by userVM.loginSuccess.collectAsState()
+
+    LaunchedEffect(loginSuccess) {
+        if (loginSuccess == false) {
+            isError = true
+        } else if (loginSuccess == true) {
+            navController.navigate("notes")
+            userVM.resetLoginSuccess()
+        }
+    }
 
     showError.value?.let {
         val errorMessage = it
@@ -59,80 +72,76 @@ fun LoginScreen(
         userVM.resetError()
     }
 
-    //checks if user is logged in, or exists, if so, shows the notes, otherwise shows loginscreen
-    if(loggedUser.value != null) {
-        navController.navigate(
-            route = "notes"
+
+    if (showRegister.value)
+    //register new user
+        RegisterScreen(
+            userVM
         )
-        userVM.resetLoginSuccess()
-    } else {
-
-        if (showRegister.value)
-        //register u
-            RegisterScreen(
-                userVM
-            )
-        else {
+    else {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+        Card(
+            modifier = Modifier.padding(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFFDDCEFA)
+            ),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            //login ui
             Column(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .padding(16.dp), // Add padding around the Column
+                verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-            Card(
-                modifier = Modifier.padding(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFAA90AB)
-                ),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                //login ui
-                Column(
-                    modifier = Modifier
-                        .padding(16.dp), // Add padding around the Column
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
 
-                    ) {
-                    SimpleTextField(
-                        "Username",
-                        usernameState
-                    ) { newValue ->  // pass callback function to child Composable
-                        usernameState =
-                            newValue    // set updated value received from child Composable
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    SimpleTextField(
-                        label = "Password",
-                        password = true,
-                        textState = passwordState
-                    ) { newValue ->  // pass callback function to child Composable
-                        passwordState =
-                            newValue    // set updated value received from child Composable
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(
-                        onClick = {
-                            userVM.getUser(usernameState, passwordState)
-                        },
-                        modifier = Modifier.width(200.dp)
-                    ) {
-                        Text("Login")
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    TextButton(onClick = {
-                        userVM.setShowRegister(true)
-                    }) {
-                        Text(
-                            text = "Register",
-                            color = MaterialTheme.colorScheme.primary,
-                            textDecoration = TextDecoration.Underline
-                        )
-                    }
+                ) {
+                SimpleTextField(
+                    label = "Username",
+                    textState = usernameState,
+                    isError = isError
+                ) { newValue ->  // pass callback function to child Composable
+                    usernameState =
+                        newValue    // set updated value received from child Composable
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                SimpleTextField(
+                    label = "Password",
+                    password = true,
+                    textState = passwordState,
+                    isError = isError
+                ) { newValue ->  // pass callback function to child Composable
+                    passwordState =
+                        newValue    // set updated value received from child Composable
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        userVM.getUser(usernameState, passwordState)
+                    },
+                    modifier = Modifier.width(200.dp)
+                ) {
+                    Text("Login")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                TextButton(onClick = {
+                    userVM.setShowRegister(true)
+                    userVM.resetLoginSuccess()
+                }) {
+                    Text(
+                        text = "Register",
+                        color = MaterialTheme.colorScheme.primary,
+                        textDecoration = TextDecoration.Underline
+                    )
                 }
             }
-            }
+        }
         }
     }
+
 }
 
 @Composable
@@ -141,6 +150,24 @@ fun RegisterScreen(
 ) {
     var usernameState by remember { mutableStateOf("") }
     var passwordState by remember { mutableStateOf("") }
+
+    var isRegUserError by remember { mutableStateOf(false) }
+    val regUserError by userVM.regUserError.collectAsState()
+
+    var isRegPassError by remember { mutableStateOf(false) }
+    val regPassError by userVM.regPassError.collectAsState()
+
+    LaunchedEffect(regUserError) {
+        if (regUserError == false) {
+            isRegUserError = true
+        }
+    }
+
+    LaunchedEffect(regPassError) {
+        if (regPassError == false) {
+            isRegPassError = true
+        }
+    }
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -151,7 +178,7 @@ fun RegisterScreen(
         modifier = Modifier
             .padding(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFAA90AB)
+            containerColor = Color(0xFFDDCEFA)
         ),
         shape = RoundedCornerShape(16.dp)
     ) {
@@ -163,7 +190,8 @@ fun RegisterScreen(
         ) {
             SimpleTextField(
                 label = "Username",
-                usernameState
+                isError = isRegUserError,
+                textState = usernameState
             ) { newValue ->  // pass callback function to child Composable
                 usernameState = newValue    // set updated value received from child Composable
             }
@@ -171,6 +199,7 @@ fun RegisterScreen(
 
             SimpleTextField(
                 label = "Password",
+                isError = isRegPassError,
                 textState = passwordState,
                 password = true
             ) { newValue ->  // pass callback function to child Composable

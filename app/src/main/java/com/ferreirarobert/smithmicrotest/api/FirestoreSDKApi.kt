@@ -1,9 +1,11 @@
 package com.ferreirarobert.smithmicrotest.api
 import android.content.ContentValues.TAG
+import android.net.Network
 import com.google.firebase.firestore.FirebaseFirestore
 import android.util.Log
 import androidx.compose.foundation.text2.input.delete
 import androidx.compose.ui.geometry.isEmpty
+import com.ferreirarobert.smithmicrotest.models.NetworkError
 import com.ferreirarobert.smithmicrotest.models.Note
 import com.ferreirarobert.smithmicrotest.models.User
 import javax.inject.Inject
@@ -16,7 +18,7 @@ class FirestoreRepository @Inject constructor(
 
     fun getNotesForUser(username: String,
                         onNotesReady: (List<Note>) -> Unit,
-                        onError: (String, Exception) -> Unit
+                        onError: (NetworkError, Exception?) -> Unit
     ) {
         notesCollection
         .whereEqualTo("user", username)
@@ -30,7 +32,7 @@ class FirestoreRepository @Inject constructor(
             onNotesReady(notes)
         }
         .addOnFailureListener { exception ->
-            onError("Error getting users.", exception)
+            onError(NetworkError.NO_INTERNET, exception)
         }
 
     }
@@ -38,7 +40,7 @@ class FirestoreRepository @Inject constructor(
     fun postNote(
         note: Note,
         onNotePosted: (Note) -> Unit,
-        onError: (String, Exception) -> Unit
+        onError: (NetworkError, Exception?) -> Unit
     ) {
         val newNote = hashMapOf(
             "content" to note.content,
@@ -58,25 +60,25 @@ class FirestoreRepository @Inject constructor(
                             if (createdNote != null) {
                                 onNotePosted(createdNote.copy(id = documentSnapshot.id))
                             } else {
-                                onError("Error converting document to Note object.", Exception("Conversion failed"))
+                                onError(NetworkError.NOTE_INCORRECT_FORMAT, null)
                             }
                         } else {
-                            onError("Error getting newly created note.", Exception("Document does not exist"))
+                            onError(NetworkError.NOTE_NOT_CREATED, null)
                         }
                     }
                     .addOnFailureListener { exception ->
-                        onError("Error getting newly created note.", exception)
+                        onError(NetworkError.NO_INTERNET, exception)
                     }
             }
             .addOnFailureListener { exception ->
-                onError("Error adding note.", exception)
+                onError(NetworkError.NO_INTERNET, exception)
             }
     }
 
     fun deleteNote(
         note: Note,
         onNoteDeleted: () -> Unit,
-        onError: (String, Exception) -> Unit
+        onError: (NetworkError, Exception?) -> Unit
     ) {
         notesCollection.document(note.id).delete()
             .addOnSuccessListener {
@@ -84,14 +86,14 @@ class FirestoreRepository @Inject constructor(
                 onNoteDeleted()
             }
             .addOnFailureListener { exception ->
-                onError("Error deleting note.", exception)
+                onError(NetworkError.NO_INTERNET, exception)
             }
     }
 
     fun getUser(username: String,
                 password: String,
                 onUserReady: (User) -> Unit,
-                onError: (String, Exception) -> Unit) {
+                onError: (NetworkError, Exception?) -> Unit) {
 
         usersCollection
             .whereEqualTo("username", username)
@@ -99,7 +101,7 @@ class FirestoreRepository @Inject constructor(
             .get()
             .addOnSuccessListener { result ->
                 if (result.isEmpty) {
-                    onError("User not found", Exception("User not found"))
+                    onError(NetworkError.USER_PASSWORD_INVALID, null)
                     return@addOnSuccessListener
                 } else {
                     val document = result.first()
@@ -109,14 +111,14 @@ class FirestoreRepository @Inject constructor(
                 }
             }
             .addOnFailureListener { exception ->
-                onError("Error logging in", exception)
+                onError(NetworkError.NO_INTERNET, exception)
             }
     }
 
     fun postUser(
         user: User,
         onUserPosted: (String) -> Unit,
-        onError: (String, Exception) -> Unit
+        onError: (NetworkError, Exception?) -> Unit
     ) {
         val db = FirebaseFirestore.getInstance()
 
@@ -137,15 +139,15 @@ class FirestoreRepository @Inject constructor(
                             onUserPosted("${user.username} created")
                         }
                         .addOnFailureListener { exception ->
-                            onError("Error adding user.", exception)
+                            onError(NetworkError.NO_INTERNET, exception)
                         }
                 } else {
                     // A user with the same username already exists
-                    onError("Username already exists.", Exception("Username already exists"))
+                    onError(NetworkError.USER_ALREADY_EXIST, null)
                 }
             }
             .addOnFailureListener { exception ->
-                onError("Error checking for existing username.", exception)
+                onError(NetworkError.NO_INTERNET, exception)
             }
     }
 

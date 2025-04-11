@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ferreirarobert.smithmicrotest.api.FirestoreRepository
+import com.ferreirarobert.smithmicrotest.models.NetworkError
 import com.ferreirarobert.smithmicrotest.models.User
 import com.ferreirarobert.smithmicrotest.repositories.UserDataStore
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -37,6 +38,12 @@ class UserViewModel @Inject constructor(
     private var _postSuccess = MutableStateFlow<Boolean?>(null)
     val postSuccess: StateFlow<Boolean?> = _postSuccess
 
+    private var _regUserError = MutableStateFlow<Boolean?>(null)
+    val regUserError: StateFlow<Boolean?> = _regUserError
+
+    private var _regPassError = MutableStateFlow<Boolean?>(null)
+    val regPassError: StateFlow<Boolean?> = _regPassError
+
     private var _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage
 
@@ -51,14 +58,14 @@ class UserViewModel @Inject constructor(
         if (username.isEmpty()) {
             _postSuccess.value = false
             _errorMessage.value = "Empty username"
+            _regUserError.value = false
             return
-            // TODO: show warnings of empty fields
         }
         if (password.isEmpty()) {
             _postSuccess.value = false
             _errorMessage.value = "Empty password"
+            _regPassError.value = false
             return
-            // TODO: show warnings of empty fields
         }
 
         val newUser = User(username, password)
@@ -66,14 +73,23 @@ class UserViewModel @Inject constructor(
             repository.postUser(
                 user = newUser,
                 onUserPosted = { message ->
+                    _regUserError.value = false
+                    _regPassError.value = false
                     _postSuccess.value = true
                     _errorMessage.value = null
                     _showRegister.value = false
                 },
-                onError = { message, exception ->
-                    Log.e(TAG, message, exception)
+                onError = { error, exception ->
+                    val errMsg = NetworkError.returnMessage(error)
+
+                    if (error == NetworkError.USER_ALREADY_EXIST) {
+                        _regUserError.value = true
+                    } else {
+                        _regUserError.value = false
+                    }
+                    Log.e(TAG, errMsg, exception)
                     _postSuccess.value = false
-                    _errorMessage.value = message
+                    _errorMessage.value = errMsg
                 }
             )
         }
@@ -89,16 +105,17 @@ class UserViewModel @Inject constructor(
                     _loginSuccess.value = true
                     _errorMessage.value = null
                 },
-                onError = { message, exception ->
-                    Log.e(TAG, message, exception)
+                onError = { error, exception ->
+                    _errorMessage.value = NetworkError.returnMessage(error)
+                    Log.e(TAG, _errorMessage.value, exception)
                     _loginSuccess.value = false
-                    _errorMessage.value = message
                 }
             )
         }
     }
 
     fun resetLoginSuccess() {
+        _loginSuccess.value = null
         _user.value = null
     }
 

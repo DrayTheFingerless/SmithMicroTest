@@ -1,14 +1,13 @@
 package com.ferreirarobert.smithmicrotest.viewmodels
 
 import android.util.Log
-import androidx.compose.animation.core.copy
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ferreirarobert.smithmicrotest.api.FirestoreRepository
+import com.ferreirarobert.smithmicrotest.models.NetworkError
 import com.ferreirarobert.smithmicrotest.models.Note
 import com.ferreirarobert.smithmicrotest.models.User
 import com.ferreirarobert.smithmicrotest.repositories.UserDataStore
-import com.google.android.gms.tasks.Tasks.await
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -68,10 +67,10 @@ class NotesViewModel @Inject constructor(
                     _notes.value = notesWithGeolocation
                 },
                 onError = { // error
-                    message, exception ->
+                    error, exception ->
                     _postSuccess.value = false
-                    _errorMessage.value = message
-                    Log.e(TAG, message, exception)
+                    _errorMessage.value = NetworkError.returnMessage(error)
+                    Log.e(TAG, _errorMessage.value, exception)
                 })
         }
     }
@@ -94,10 +93,11 @@ class NotesViewModel @Inject constructor(
                     _notes.value = newList.toList()
                 },
                 onError = {
-                  message, exception ->
-                    Log.e(TAG, message, exception)
+                  error, exception ->
                     _postSuccess.value = false
-                    _errorMessage.value = message
+                    _errorMessage.value = NetworkError.returnMessage(error)
+                    Log.e(TAG, _errorMessage.value, exception)
+
                 }
             )
         }
@@ -108,12 +108,16 @@ class NotesViewModel @Inject constructor(
             repository.deleteNote(
                 note = note,
                 onNoteDeleted = {
+                    _postSuccess.value = true
+                    _errorMessage.value = null
                     val updatedNotes = _notes.value.toMutableList()
                     updatedNotes.remove(note)
                     _notes.value = updatedNotes
                 },
-                onError = { message, exception ->
-                    Log.e(TAG, message, exception)
+                onError = { error, exception ->
+                    _postSuccess.value = false
+                    _errorMessage.value = NetworkError.returnMessage(error)
+                    Log.e(TAG, _errorMessage.value, exception)
                 }
             )
         }
